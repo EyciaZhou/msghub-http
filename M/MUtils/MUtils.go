@@ -4,6 +4,7 @@ import (
 	"reflect"
 	"strconv"
 	"fmt"
+	"encoding/json"
 	"database/sql/driver"
 )
 
@@ -22,8 +23,8 @@ func IdPanic(id interface{}) string {
 	return idS
 }
 
-func BytesPanic(mp map[string]interface{}) byte[] {
-	bs, err := json.Marshal(m.ToJson())
+func BytesPanic(mp map[string]interface{}) []byte {
+	bs, err := json.Marshal(mp)
 	if err != nil {
 		panic(err)
 	}
