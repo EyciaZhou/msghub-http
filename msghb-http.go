@@ -1,8 +1,8 @@
 package main
 
 import (
-	"gopkg.in/macaron.v1"
 	"github.com/EyciaZhou/msghub-http/C/CMsgs"
+	"gopkg.in/macaron.v1"
 )
 
 func main() {

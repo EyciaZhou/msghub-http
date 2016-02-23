@@ -1,9 +1,9 @@
 package CMsgs
 
 import (
-	"gopkg.in/macaron.v1"
-	"github.com/EyciaZhou/msghub-http/M/msghub"
 	"github.com/EyciaZhou/msghub-http/C"
+	"github.com/EyciaZhou/msghub-http/M/msghub"
+	"gopkg.in/macaron.v1"
 )
 
 func RouterGroup(m *macaron.Macaron) {
@@ -18,7 +18,7 @@ func getMsgs(ctx *macaron.Context) {
 	if limit > 20 || limit <= 0 {
 		limit = 20 //default
 	}
-	if lstid == "" {
+	if lstti < 0 {
 		ctx.JSON(200, C.PackError(msghub.DBMsg.GetRecentFirstPage(limit)))
 		return
 	}
@@ -26,5 +26,6 @@ func getMsgs(ctx *macaron.Context) {
 }
 
 func getMsg(ctx *macaron.Context) {
-
+	id := ctx.Params(":id")
+	ctx.JSON(200, C.PackError(msghub.DBMsg.GetById(id)))
 }

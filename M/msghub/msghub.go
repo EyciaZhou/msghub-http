@@ -1,10 +1,11 @@
 package msghub
 
 import (
-	"fmt"
 	"database/sql"
-	_ "github.com/go-sql-driver/mysql"
+	"fmt"
+	"git.eycia.me/eycia/configparser"
 	log "github.com/Sirupsen/logrus"
+	_ "github.com/go-sql-driver/mysql"
 )
 
 type msghubError struct {
@@ -35,10 +36,12 @@ type Config struct {
 
 var config Config
 var (
-	db	*sql.DB
+	db *sql.DB
 )
 
 func init() {
+	configparser.AutoLoadConfig("M.msghub", &config)
+
 	var err error
 	log.Info("M.msghub Start Connect mysql")
 	url := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s", config.DBUsername, config.DBPassword, config.DBAddress, config.DBPort, config.DBName)

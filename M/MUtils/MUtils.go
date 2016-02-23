@@ -1,11 +1,11 @@
 package MUtils
 
 import (
+	"database/sql/driver"
+	"encoding/json"
+	"fmt"
 	"reflect"
 	"strconv"
-	"fmt"
-	"encoding/json"
-	"database/sql/driver"
 )
 
 func IdPanic(id interface{}) string {
@@ -14,7 +14,7 @@ func IdPanic(id interface{}) string {
 	var idS string
 	if reflect.TypeOf(id).Kind() == reflect.String {
 		idS = id.(string)
-	} else if reflect.TypeOf(id).ConvertibleTo(typeInt64) {	//float int int64 etc.
+	} else if reflect.TypeOf(id).ConvertibleTo(typeInt64) { //float int int64 etc.
 		idS = strconv.FormatInt(reflect.ValueOf(id).Convert(typeInt64).Int(), 10)
 	} else {
 		panic(fmt.Errorf("ID[%s] have illegal type", id))
@@ -31,11 +31,11 @@ func BytesPanic(mp map[string]interface{}) []byte {
 	return bs
 }
 
-type CanNull interface {
+type canNull interface {
 	Value() (driver.Value, error)
 }
 
-func CanNullToInterface(cn CanNull) interface{} {
+func CanNullToInterface(cn canNull) interface{} {
 	i, _ := cn.Value()
 	return (interface{})(i)
 }

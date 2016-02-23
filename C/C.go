@@ -6,7 +6,20 @@ type JSON struct {
 	Reason string      `json:"reason"`
 }
 
+type canToMap interface {
+	ToMap() map[string]interface{}
+}
+
 func Pack(v interface{}) *JSON {
+	/*
+	if cmp, ok := v.(canToMap); ok {
+		return &JSON{
+			Err:    0,
+			Data:   cmp.ToMap(),
+			Reason: "",
+		}
+	}
+	*/
 	return &JSON{
 		Err:    0,
 		Data:   v,
