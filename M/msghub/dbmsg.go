@@ -2,6 +2,7 @@ package msghub
 
 import (
 	"database/sql"
+	"fmt"
 )
 
 type Dbmsg struct{}
@@ -94,7 +95,7 @@ func (*Dbmsg) GetReferredPictures(id string) (_res []*PicRef, _err error) {
 	return _res[:i], nil
 }
 
-func (*Dbmsg) GetRecentPageFlip(Limit int, lstti int64, lstid string) (_res []*MsgInfo, _err error) {
+func (*Dbmsg) GetRecentPageFlip(ChanId string, Limit int, lstti int64, lstid string, ignoreChan bool) (_res []*MsgInfo, _err error) {
 	defer func() {
 		err := recover()
 		if err != nil {
@@ -102,24 +103,47 @@ func (*Dbmsg) GetRecentPageFlip(Limit int, lstti int64, lstid string) (_res []*M
 		}
 	}()
 
+	chansMutex.RLock()
+	if _, ok := chans[ChanId]; !ignoreChan && !ok {
+		chansMutex.RUnlock()
+		return []*MsgInfo{}, nil
+	}
+	chansMutex.RUnlock()
+
 	var (
 		NullCoverImgId sql.NullString
 		NullTopic      sql.NullString
 	)
 
-	rows, err := db.Query(`
+	var (
+		rows *sql.Rows
+	)
+
+	if ignoreChan {
+		rows, _err = db.Query(`
 		SELECT
 				id, SnapTime, PubTime, SourceURL, Title, SubTitle, CoverImg, ViewType, Frm, Tag, Topic
 			FROM msg
 			WHERE ? >= SnapTime
 			ORDER BY SnapTime DESC
-			LIMIT ?`, lstti, Limit+1) //plus one because of lstid included, it's design to avoid the error
+			LIMIT ?`, lstti, Limit + 1)
+	} else {
+		rows, _err = db.Query(`
+		SELECT
+				id, SnapTime, PubTime, SourceURL, Title, SubTitle, CoverImg, ViewType, Frm, Tag, Topic
+			FROM msg
+			WHERE ? >= SnapTime AND Topic=?
+			ORDER BY SnapTime DESC
+			LIMIT ?`, lstti, ChanId, Limit + 1)
+	}
+
+	//plus one because of lstid included, it's design to avoid the error
 	// when msgs have same lastti
 
 	defer rows.Close()
 
-	if err != nil {
-		return nil, err
+	if _err != nil {
+		return nil, _err
 	}
 
 	_res = make([]*MsgInfo, Limit+1)
@@ -153,7 +177,7 @@ func (*Dbmsg) GetRecentPageFlip(Limit int, lstti int64, lstid string) (_res []*M
 	return _res[:i], nil
 }
 
-func (*Dbmsg) GetRecentFirstPage(Limit int) (_res []*MsgInfo, _err error) {
+func (*Dbmsg) GetRecentFirstPage(ChanId string, Limit int, ignoreChan bool) (_res []*MsgInfo, _err error) {
 	defer func() {
 		err := recover()
 		if err != nil {
@@ -161,22 +185,46 @@ func (*Dbmsg) GetRecentFirstPage(Limit int) (_res []*MsgInfo, _err error) {
 		}
 	}()
 
+	chansMutex.RLock()
+
+	fmt.Printf("%v\n%v\n", chans, chans[ChanId])
+
+	if _, ok := chans[ChanId]; !ignoreChan && !ok {
+		chansMutex.RUnlock()
+		return []*MsgInfo{}, nil
+	}
+	chansMutex.RUnlock()
+
 	var (
 		NullCoverImgId sql.NullString
 		NullTopic      sql.NullString
 	)
 
-	rows, err := db.Query(`
+	var (
+		rows *sql.Rows
+	)
+
+	if ignoreChan {
+		rows, _err = db.Query(`
 		SELECT
 				id, SnapTime, PubTime, SourceURL, Title, SubTitle, CoverImg, ViewType, Frm, Tag, Topic
 			FROM msg
 			ORDER BY SnapTime DESC
-			LIMIT ?`, Limit) //? SnapTime or PubTime
+			LIMIT ?`, Limit) //TODO: ? SnapTime or PubTime
+	} else {
+		rows, _err = db.Query(`
+		SELECT
+				id, SnapTime, PubTime, SourceURL, Title, SubTitle, CoverImg, ViewType, Frm, Tag, Topic
+			FROM msg
+			WHERE Topic=?
+			ORDER BY SnapTime DESC
+			LIMIT ?`, ChanId, Limit) //TODO: ? SnapTime or PubTime
+	}
 
 	defer rows.Close()
 
-	if err != nil {
-		return nil, err
+	if _err != nil {
+		return nil, _err
 	}
 
 	_res = make([]*MsgInfo, Limit)
@@ -203,4 +251,11 @@ func (*Dbmsg) GetRecentFirstPage(Limit int) (_res []*MsgInfo, _err error) {
 	}
 
 	return _res[:i], nil
+}
+
+func (*Dbmsg) GetChanInfos() []*ChanInfo {
+	chansMutex.RLock()
+	defer chansMutex.RUnlock()
+
+	return chansArray
 }

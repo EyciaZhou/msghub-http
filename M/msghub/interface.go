@@ -9,6 +9,12 @@ type MsgResult interface {
 	Bytes() []byte
 }
 
+type ChanInfo struct {
+	Id string
+	Title string
+	LastModify int64
+}
+
 type Msg struct {
 	MsgInfo
 	Body string
