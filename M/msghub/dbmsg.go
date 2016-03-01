@@ -41,6 +41,7 @@ func (d *Dbmsg) GetById(id string) (_res *Msg, _err error) {
 		if _err != sql.ErrNoRows {
 			_err = newMsghubError("Server Error : msg.GetById", _err)
 		}
+		return
 	}
 
 	_res.Topic = NullTopic.String
