@@ -88,5 +88,6 @@ func cronUpdateChanInfos() {
 
 func init() {
 	chans = map[string]*ChanInfo{}
+	chansArray = []*ChanInfo{}
 	go cronUpdateChanInfos()
 }

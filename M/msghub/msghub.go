@@ -22,11 +22,6 @@ func newMsghubError(_time string, _err error) *msghubError {
 }
 
 type Config struct {
-	QueueTableName  string `default:"pic_task_queue"`
-	PicRefTableName string `default:"picref"`
-	MsgTableName    string `default:"msg"`
-	TopicTableName  string `default:"topic"`
-
 	DBAddress  string `default:"127.0.0.1"`
 	DBPort     string `default:"3306"`
 	DBName     string `default:"msghub"`

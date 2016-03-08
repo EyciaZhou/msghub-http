@@ -37,3 +37,11 @@ func PackError(v interface{}, e error) *JSON {
 	}
 	return Pack(v)
 }
+
+func Error(e error) *JSON {
+	return &JSON{
+		Err:    1,
+		Data:   nil,
+		Reason: e.Error(),
+	}
+}
