@@ -1,10 +1,8 @@
 package MUser
 
-type user struct {
-	id int
-	username string
-	email string
-	pwd []byte
-	sale []byte
-	master bool
+type User_base_info struct {
+	Id int
+	Username string
+	Email string
+	Master int
 }
