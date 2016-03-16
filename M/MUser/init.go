@@ -9,16 +9,20 @@ import (
 )
 
 type userError struct {
-	error
 	_time string
+	_err string
 }
 
 func (m *userError) Error() string {
-	return m._time + m.error.Error()
+	return m._time + " : " + m._err
 }
 
-func newUserError(_time string, _err error) *userError {
-	return &userError{_err, _time}
+func newUserError(_time string, _err string) *userError {
+	return &userError{_time, _err}
+}
+
+func newUserErrorByError(_time string, _err error) *userError {
+	return &userError{_time, _err.Error()}
 }
 
 type Config struct {

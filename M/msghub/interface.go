@@ -1,7 +1,6 @@
 package msghub
 
 import (
-	"github.com/EyciaZhou/msghub-http/M/MUtils"
 )
 
 type MsgResult interface {
@@ -49,10 +48,6 @@ func (m *Msg) ToMap() map[string]interface{} {
 	return mp
 }
 
-func (m *Msg) Bytes() []byte {
-	return MUtils.BytesPanic(m.ToMap())
-}
-
 func (m *MsgInfo) ToMap() map[string]interface{} {
 	return map[string]interface{}{
 		"Id":         m.Id,
@@ -67,8 +62,4 @@ func (m *MsgInfo) ToMap() map[string]interface{} {
 		"Tag":        m.Tag,
 		"Topic":      m.Topic,
 	}
-}
-
-func (m *MsgInfo) Bytes() []byte {
-	return MUtils.BytesPanic(m.ToMap())
 }
