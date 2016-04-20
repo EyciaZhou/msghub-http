@@ -39,5 +39,5 @@ func (d *Dbmsg) GetPic(id string) (_res string, _err error) {
 		return "", errors.New("Not Found")
 	}
 
-	return fmt.Sprintf("http://pic%s.eycia.me:8080/%s.%s", res.String, id, ext.String), nil
+	return fmt.Sprintf("https://pic%s.eycia.me:8080/%s.%s", res.String, id, ext.String), nil
 }

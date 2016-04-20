@@ -1,0 +1,13 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>错误</title>
+</head>
+<body>
+    {{.error_msg}}
+<script>
+setTimeout(function(){window.location.href = '{{.error_redirect_to}}';},3000);
+</script>
+</body>
+</html>

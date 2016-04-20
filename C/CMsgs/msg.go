@@ -6,7 +6,7 @@ import (
 	"gopkg.in/macaron.v1"
 )
 
-func RouterGroup(m *macaron.Macaron) {
+func ApiRouterGroup(m *macaron.Macaron) {
 	m.Group("/msgs", func() {
 		m.Get("/page/:limit/:lstid/:lstti", getMsgs)
 		m.Get("/chan/:chan/page/:limit/:lstid/:lstti", getMsgs)
@@ -14,9 +14,18 @@ func RouterGroup(m *macaron.Macaron) {
 		m.Get("/chan", getChans)
 	})
 }
-
+/*
+func HtmlRouterGroup(m *macaron.Macaron) {
+	m.Group("/msgs", func() {
+		m.Get("/page/:limit/:lstid/:lstti", htmlGetMsgs)
+		m.Get("/chan/:chan/page/:limit/:lstid/:lstti", htmlGetMsgs)
+		m.Get("/:id", htmlGetMsg)
+		m.Get("/chan", htmlGetChans)
+	})
+}
+*/
 func getMsgs(ctx *macaron.Context) {
-	_chan, limit, lstti, lstid := ctx.Params("chan"), ctx.ParamsInt(":limit"), ctx.ParamsInt64(":lstti"), ctx.Params("lstid")
+	_chan, limit, lstti, lstid := ctx.Params("chan"), ctx.ParamsInt(":limit"), ctx.ParamsInt64(":lstti"), ctx.Params(":lstid")
 	if limit > 20 || limit <= 0 {
 		limit = 20 //default
 	}

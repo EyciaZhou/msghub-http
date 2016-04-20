@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>登录</title>
+</head>
+<body>
+<form class="ui form" action="./login" method="post">
+    <input type="hidden" name="_csrf" value="{{.csrf_token}}">
+    <h3 class="ui top attached header">
+        登录
+    </h3>
+    <div class="ui attached segment">
+        <div class="required inline field ">
+            <label for="uname">用户名</label>
+            <input id="uname" name="uname" autofocus="" required="">
+        </div>
+        <div class="required inline field ">
+            <label for="password">密码</label>
+            <input id="password" name="password" type="password" required="">
+        </div>
+
+        <div class="inline field">
+            <label></label>
+            {{.Captcha.CreateHtml}}
+        </div>
+        <div class="required inline field error">
+            <label for="captcha">验证码</label>
+            <input id="captcha" name="captcha" value="" autocomplete="off">
+        </div>
+
+
+        <div class="inline field">
+            <label></label>
+            <button class="ui green button">登录</button>
+        </div>
+    </div>
+</form>
+</body>
+</html>

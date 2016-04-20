@@ -188,8 +188,6 @@ func (*Dbmsg) GetRecentFirstPage(ChanId string, Limit int, ignoreChan bool) (_re
 
 	chansMutex.RLock()
 
-	fmt.Printf("%v\n%v\n", chans, chans[ChanId])
-
 	if _, ok := chans[ChanId]; !ignoreChan && !ok {
 		chansMutex.RUnlock()
 		return []*MsgInfo{}, nil

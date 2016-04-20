@@ -18,14 +18,14 @@ var Ruler = newRuler()
 
 func newRuler() *ruler {
 	return &ruler {
-		Username:regexp.MustCompile("^[a-zA-Z][a-zA-Z0-9_]{5,16}$"),				//start with
+		Username:regexp.MustCompile("^[a-zA-Z][a-zA-Z0-9_]{4,15}$"),				//start with
 		Email:regexp.MustCompile(`^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$`),
 		Uid:regexp.MustCompile(`^[0-9]+$`),
 	}
 }
 
 func (*ruler) Pwd_sha256(bs []byte) bool {
-	return len(bs) == 16
+	return len(bs) == 32
 }
 
 func (*ruler) Nickname(name string) bool {
@@ -121,7 +121,7 @@ func (Dbuser *Dbuser) Change_nickname(uname string, nickname string) (error) {
 	return nil
 }
 
-func (dbuser *Dbuser) Add(username string, email string, nickname string, pwd_sha256 []byte) (int64, error) {
+func (dbuser *Dbuser) Add(username string, email string, pwd_sha256 []byte) (int64, error) {
 	if !Ruler.Username.MatchString(username) {
 		return 0, newUserError("创建用户时错误", "用户名格式错误")
 	}
@@ -130,9 +130,6 @@ func (dbuser *Dbuser) Add(username string, email string, nickname string, pwd_sh
 	}
 	if !Ruler.Pwd_sha256(pwd_sha256) {
 		return 0, newUserError("创建用户时错误", "密码格式错误")
-	}
-	if !Ruler.Nickname(nickname) {
-		return 0, newUserError("创建用户时错误", "昵称格式错误")
 	}
 
 	username = strings.ToLower(username)
@@ -145,7 +142,7 @@ func (dbuser *Dbuser) Add(username string, email string, nickname string, pwd_sh
 				_user (username, email, pwd, salt, nickname)
 			VALUE
 				(?,?,?,?,?)
-	`, username, email, pwd_sha256_salted_sha256, salt, nickname)
+	`, username, email, pwd_sha256_salted_sha256, salt, username)
 	if err != nil {
 		if e, ok := err.(*mysql.MySQLError); ok {
 			if e.Number == 2525 {

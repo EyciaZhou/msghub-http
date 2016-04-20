@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>注册</title>
+</head>
+<body>
+<form class="ui form" action="./sign" method="post">
+    <input type="hidden" name="_csrf" value="{{.csrf_token}}">
+    <h3 class="ui top attached header">
+        注册
+    </h3>
+    <div class="ui attached segment">
+        <div class="required inline field ">
+            <label for="username">用户名</label>
+            <input id="username" name="username" autofocus="" required="">
+        </div>
+        <div class="required inline field ">
+            <label for="email">邮箱</label>
+            <input id="email" name="email" type="email" required="">
+        </div>
+        <div class="required inline field ">
+            <label for="password">密码</label>
+            <input id="password" name="password" type="password" required="">
+        </div>
+        <div class="required inline field ">
+            <label for="retype">确认密码</label>
+            <input id="retype" name="retype" type="password" required="">
+        </div>
+
+        <div class="inline field">
+            <label></label>
+            {{.Captcha.CreateHtml}}
+        </div>
+        <div class="required inline field error">
+            <label for="captcha">验证码</label>
+            <input id="captcha" name="captcha" value="" autocomplete="off">
+        </div>
+
+
+        <div class="inline field">
+            <label></label>
+            <button class="ui green button">创建帐户</button>
+        </div>
+        <div class="inline field">
+            <label></label>
+            <a href="./login">已经注册？立即登录！</a>
+        </div>
+
+    </div>
+</form>
+</body>
+</html>
