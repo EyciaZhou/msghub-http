@@ -29,7 +29,9 @@ type MsgInfo struct {
 	SubTitle   string
 	CoverImgId string `json:",omitempty"`
 	ViewType   int
-	Frm        string
+	AuthorId   string
+	AuthorCoverImgId string
+	AuthorName string
 	Tag        string
 	Topic      string `json:",omitempty"`
 }
@@ -37,7 +39,7 @@ type MsgInfo struct {
 type PicRef struct {
 	Pid         string
 	Ref         string `json:",omitempty"`
-	Pixes	string `json:",omitempty"`
+	Pixes	    string `json:",omitempty"`
 	Description string
 	Node int
 }
@@ -58,7 +60,7 @@ func (m *MsgInfo) ToMap() map[string]interface{} {
 		"SubTitle":   m.SubTitle,
 		"CoverImgId": m.CoverImgId,
 		"ViewType":   m.ViewType,
-		"Frm":        m.Frm,
+		"AuthorId":   m.AuthorId,
 		"Tag":        m.Tag,
 		"Topic":      m.Topic,
 	}

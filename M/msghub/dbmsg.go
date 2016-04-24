@@ -2,7 +2,6 @@ package msghub
 
 import (
 	"database/sql"
-	"fmt"
 )
 
 type Dbmsg struct{}
@@ -25,15 +24,18 @@ func (d *Dbmsg) GetById(id string) (_res *Msg, _err error) {
 	//idS := MUtils.IdPanic(id)
 	row := db.QueryRow(`
 		SELECT
-				id, SnapTime, PubTime, SourceURL, Title, SubTitle, CoverImg, ViewType, Frm, Tag, Topic, Body
-			FROM msg
-			WHERE id=?
+				msg.id, SnapTime, PubTime, SourceURL, Title, SubTitle, msg.CoverImg, ViewType,
+                		author.id as AuthorId, author.coverImg as AuthorCoverImg, author.name as AuthorName,
+                		Tag, Topic, Body
+			FROM msg, author
+			WHERE msg.id=? and msg.AuthorId = author.id
 			LIMIT 1`, id)
 
 	_res = &Msg{}
 	_err = row.Scan(
 		&_res.Id, &_res.SnapTime, &_res.PubTime, &_res.SourceURL, &_res.Title,
-		&_res.SubTitle, &NullCoverImgId, &_res.ViewType, &_res.Frm, &_res.Tag, &NullTopic, &_res.Body,
+		&_res.SubTitle, &NullCoverImgId, &_res.ViewType, &_res.AuthorId, &_res.AuthorCoverImgId, &_res.AuthorName,
+		&_res.Tag, &NullTopic, &_res.Body,
 	)
 
 	if _err != nil {
@@ -123,29 +125,33 @@ func (*Dbmsg) GetRecentPageFlip(ChanId string, Limit int, lstti int64, lstid str
 	if ignoreChan {
 		rows, _err = db.Query(`
 		SELECT
-				id, SnapTime, PubTime, SourceURL, Title, SubTitle, CoverImg, ViewType, Frm, Tag, Topic
-			FROM msg
-			WHERE ? >= SnapTime
-			ORDER BY SnapTime DESC
+				msg.id, SnapTime, PubTime, SourceURL, Title, SubTitle, msg.CoverImg, ViewType,
+				author.id as AuthorId, author.coverImg as AuthorCoverImg, author.name as AuthorName,
+				Tag, Topic
+			FROM msg, author
+			WHERE ? >= SnapTime and AND msg.AuthorId = author.id
+			ORDER BY PubTime DESC
 			LIMIT ?`, lstti, Limit + 1)
 	} else {
 		rows, _err = db.Query(`
 		SELECT
-				id, SnapTime, PubTime, SourceURL, Title, SubTitle, CoverImg, ViewType, Frm, Tag, Topic
-			FROM msg
-			WHERE ? >= SnapTime AND Topic=?
-			ORDER BY SnapTime DESC
+				msg.id, SnapTime, PubTime, SourceURL, Title, SubTitle, msg.CoverImg, ViewType,
+				author.id as AuthorId, author.coverImg as AuthorCoverImg, author.name as AuthorName,
+				Tag, Topic
+			FROM msg, author
+			WHERE ? >= SnapTime AND Topic=? AND msg.AuthorId = author.id
+			ORDER BY PubTime DESC
 			LIMIT ?`, lstti, ChanId, Limit + 1)
 	}
 
 	//plus one because of lstid included, it's design to avoid the error
 	// when msgs have same lastti
 
-	defer rows.Close()
-
 	if _err != nil {
 		return nil, _err
 	}
+
+	defer rows.Close()
 
 	_res = make([]*MsgInfo, Limit+1)
 
@@ -154,7 +160,8 @@ func (*Dbmsg) GetRecentPageFlip(ChanId string, Limit int, lstti int64, lstid str
 		info := &MsgInfo{}
 		_err = rows.Scan(
 			&info.Id, &info.SnapTime, &info.PubTime, &info.SourceURL, &info.Title,
-			&info.SubTitle, &NullCoverImgId, &info.ViewType, &info.Frm, &info.Tag, &NullTopic,
+			&info.SubTitle, &NullCoverImgId, &info.ViewType, &info.AuthorId, &info.AuthorCoverImgId, &info.AuthorName,
+			&info.Tag, &NullTopic,
 		)
 
 		if _err != nil {
@@ -206,25 +213,29 @@ func (*Dbmsg) GetRecentFirstPage(ChanId string, Limit int, ignoreChan bool) (_re
 	if ignoreChan {
 		rows, _err = db.Query(`
 		SELECT
-				id, SnapTime, PubTime, SourceURL, Title, SubTitle, CoverImg, ViewType, Frm, Tag, Topic
-			FROM msg
-			ORDER BY SnapTime DESC
+				msg.id, SnapTime, PubTime, SourceURL, Title, SubTitle, msg.CoverImg, ViewType,
+				author.id as AuthorId, author.coverImg as AuthorCoverImg, author.name as AuthorName,
+				Tag, Top
+			FROM msg, author
+			WHERE msg.AuthorId = author.id
+			ORDER BY PubTime DESC
 			LIMIT ?`, Limit) //TODO: ? SnapTime or PubTime
 	} else {
 		rows, _err = db.Query(`
 		SELECT
-				id, SnapTime, PubTime, SourceURL, Title, SubTitle, CoverImg, ViewType, Frm, Tag, Topic
-			FROM msg
-			WHERE Topic=?
-			ORDER BY SnapTime DESC
+				msg.id, SnapTime, PubTime, SourceURL, Title, SubTitle, msg.CoverImg, ViewType,
+				author.id as AuthorId, author.coverImg as AuthorCoverImg, author.name as AuthorName,
+				Tag, Top
+			FROM msg, author
+			WHERE Topic=? AND msg.AuthorId = author.id
+			ORDER BY PubTime DESC
 			LIMIT ?`, ChanId, Limit) //TODO: ? SnapTime or PubTime
 	}
-
-	defer rows.Close()
-
 	if _err != nil {
 		return nil, _err
 	}
+
+	defer rows.Close()
 
 	_res = make([]*MsgInfo, Limit)
 
@@ -233,7 +244,8 @@ func (*Dbmsg) GetRecentFirstPage(ChanId string, Limit int, ignoreChan bool) (_re
 		info := &MsgInfo{}
 		_err = rows.Scan(
 			&info.Id, &info.SnapTime, &info.PubTime, &info.SourceURL, &info.Title,
-			&info.SubTitle, &NullCoverImgId, &info.ViewType, &info.Frm, &info.Tag, &NullTopic,
+			&info.SubTitle, &NullCoverImgId, &info.ViewType, &info.AuthorId, &info.AuthorCoverImgId, &info.AuthorName,
+			&info.Tag, &NullTopic,
 		)
 
 		if _err != nil {

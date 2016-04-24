@@ -25,7 +25,7 @@ func main() {
 	m.Use(captcha.Captchaer())
 
 	C.RouterGroup(m)
-	CMsgs.RouterGroup(m)
+	CMsgs.ApiRouterGroup(m)
 	CPic.RouterGroup(m)
 	CUser.RouterGroup(m)
 
