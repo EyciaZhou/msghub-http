@@ -4,7 +4,20 @@ import (
 	"database/sql"
 	"fmt"
 	"errors"
+	"strings"
 )
+
+func (d *Dbmsg) BuildPic(id string, bu string, node string) string {
+	id = strings.TrimLeft(id, "0")
+
+	switch node {
+	case "FS":
+		return fmt.Sprintf("https://pic%s.eycia.me/%s.%s", bu, id)
+	case "QINIU":
+		return fmt.Sprintf("http://7xtaud.com2.z0.glb.qiniucdn.com/"+id)
+	}
+	return ""
+}
 
 func (d *Dbmsg) GetPic(id string) (_res string, _err error) {
 	defer func() {
@@ -16,15 +29,17 @@ func (d *Dbmsg) GetPic(id string) (_res string, _err error) {
 
 	row := db.QueryRow(`
 		SELECT
-				nodenum, ext
+				nodetype, nodenum, ext
 			FROM pic_task_queue
 			WHERE id=?
 			LIMIT 1`, id);
 
-	var res sql.NullString
-	var ext sql.NullString
 
-	_err = row.Scan(&res, &ext)
+	var nodetype sql.NullString
+	var nodenum sql.NullString
+	var mime sql.NullString
+
+	_err = row.Scan(&nodetype, &nodenum, &mime)
 
 	if _err != nil {
 		if _err != sql.ErrNoRows {
@@ -35,9 +50,14 @@ func (d *Dbmsg) GetPic(id string) (_res string, _err error) {
 		return
 	}
 
-	if !res.Valid {
-		return "", errors.New("Not Found")
+	if !nodetype.Valid {
+		_err = errors.New("not valid pic")
+		return
 	}
 
-	return fmt.Sprintf("https://pic%s.eycia.me:8080/%s.%s", res.String, id, ext.String), nil
+	_res = d.BuildPic(id, nodenum.String, nodetype.String)
+	if _res == "" {
+		_err = errors.New("not valid pic")
+	}
+	return
 }

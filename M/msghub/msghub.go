@@ -3,9 +3,14 @@ package msghub
 import (
 	"database/sql"
 	"fmt"
-	"git.eycia.me/eycia/configparser"
+	"github.com/EyciaZhou/configparser"
 	log "github.com/Sirupsen/logrus"
 	_ "github.com/go-sql-driver/mysql"
+	"github.com/EyciaZhou/msghub.go/Utiles"
+)
+
+var (
+	DEBUG = true
 )
 
 type msghubError struct {
@@ -17,8 +22,8 @@ func (m *msghubError) Error() string {
 	return m._time + m.error.Error()
 }
 
-func newMsghubError(_time string, _err error) *msghubError {
-	return &msghubError{_err, _time}
+func newMsghubError(_time string, _err error) error {
+	return Utiles.NewPanicError(&msghubError{_err, _time})
 }
 
 type Config struct {
@@ -35,6 +40,8 @@ var (
 )
 
 func init() {
+	Utiles.OUTPUT_STACK_ON_ERROR = true
+
 	configparser.AutoLoadConfig("M.msghub", &config)
 
 	var err error

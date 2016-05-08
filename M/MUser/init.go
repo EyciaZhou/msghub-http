@@ -3,7 +3,7 @@ package MUser
 import (
 	"database/sql"
 	"fmt"
-	"git.eycia.me/eycia/configparser"
+	"github.com/EyciaZhou/configparser"
 	log "github.com/Sirupsen/logrus"
 	_ "github.com/go-sql-driver/mysql"
 )

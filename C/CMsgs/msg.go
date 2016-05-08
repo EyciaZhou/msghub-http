@@ -25,13 +25,9 @@ func HtmlRouterGroup(m *macaron.Macaron) {
 }
 */
 func getMsgs(ctx *macaron.Context) {
-	_chan, limit, lstti, lstid := ctx.Params("chan"), ctx.ParamsInt(":limit"), ctx.ParamsInt64(":lstti"), ctx.Params(":lstid")
+	_chan, limit, lstti, lstid := ctx.Params(":chan"), ctx.ParamsInt(":limit"), ctx.ParamsInt64(":lstti"), ctx.Params(":lstid")
 	if limit > 20 || limit <= 0 {
 		limit = 20 //default
-	}
-	if lstti < 0 {
-		ctx.JSON(200, C.PackError(msghub.DBMsg.GetRecentFirstPage(_chan, limit, _chan=="")))
-		return
 	}
 	ctx.JSON(200, C.PackError(msghub.DBMsg.GetRecentPageFlip(_chan, limit, lstti, lstid, _chan=="")))
 }
