@@ -20,25 +20,35 @@ func (d *Dbmsg) GetById(id string) (_res *Msg, _err error) {
 	}()
 
 	var (
-		NullCoverImgId  sql.NullString
+		NullCoverImg  sql.NullString
 		NullTopic       sql.NullString
 		NullAuthorCover sql.NullString
+		NullAuthorName sql.NullString
+		NullAuthorId sql.NullString
 	)
 
 	//idS := MUtils.IdPanic(id)
 	row := db.QueryRow(`
+SELECT
+			msg.id, SnapTime, PubTime, SourceURL, Title, SubTitle,
+			CONCAT(pb.id,',',pb.nodenum,",",pb.nodetype) as CoverImg, ViewType,
+			author.id as AuthorId,CONCAT(pc.id,',',pc.nodenum,",",pc.nodetype) as AuthorCoverImg,
+			author.name as AuthorName, Tag, Topic, Body
+	FROM(
 		SELECT
-				msg.id, SnapTime, PubTime, SourceURL, Title, SubTitle, msg.CoverImg, ViewType,
-                		author.id as AuthorId, author.coverImg as AuthorCoverImg, author.name as AuthorName,
-                		Tag, Topic, Body
-			FROM msg, author
-			WHERE msg.id=? and msg.AuthorId = author.id
-			LIMIT 1`, id)
+			*
+			FROM msg
+			WHERE msg.id=?
+			LIMIT 1
+	) msg
+	LEFT JOIN author ON msg.AuthorId = author.id
+	LEFT JOIN pic_task_queue pb ON pb.id = msg.CoverImg
+	LEFT JOIN pic_task_queue pc ON pc.id = author.coverImg`, id)
 
 	_res = &Msg{}
 	_err = row.Scan(
 		&_res.Id, &_res.SnapTime, &_res.PubTime, &_res.SourceURL, &_res.Title,
-		&_res.SubTitle, &NullCoverImgId, &_res.ViewType, &_res.AuthorId, &NullAuthorCover, &_res.AuthorName,
+		&_res.SubTitle, &NullCoverImg, &_res.ViewType, &NullAuthorId, &NullAuthorCover, &NullAuthorName,
 		&_res.Tag, &NullTopic, &_res.Body,
 	)
 
@@ -51,8 +61,10 @@ func (d *Dbmsg) GetById(id string) (_res *Msg, _err error) {
 	}
 
 	_res.Topic = NullTopic.String
-	_res.CoverImg = NullCoverImgId.String
-	_res.AuthorCoverImg = NullAuthorCover.String
+	_res.CoverImg = DBMsg.genPicUrl(NullCoverImg.String)
+	_res.AuthorCoverImg = DBMsg.genPicUrl(NullAuthorCover.String)
+	_res.AuthorId = NullAuthorId.String
+	_res.AuthorName = NullAuthorName.String
 
 	_res.PicRefs, _err = d.GetReferredPictures(id)
 	if _err != nil {
@@ -144,7 +156,7 @@ const _RAW_SQL_PAGE_DOWN = `
 	GROUP BY tb.id;`
 
 
-func (*Dbmsg) GetRecentPageFlip(ChanId string, Limit int, lstti int64, lstid string, ignoreChan bool) (_res []*Msg, _err error) {
+func (*Dbmsg) GetRecentPageFlip(ChanId string, Limit int, lstti int64, lstid string, ignoreChan bool) (_res []*MsgLine, _err error) {
 	defer func() {
 		err := recover()
 		if err != nil {
@@ -155,7 +167,7 @@ func (*Dbmsg) GetRecentPageFlip(ChanId string, Limit int, lstti int64, lstid str
 	chansMutex.RLock()
 	if _, ok := chans[ChanId]; !ignoreChan && !ok {
 		chansMutex.RUnlock()
-		return []*Msg{}, nil
+		return []*MsgLine{}, nil
 	}
 	chansMutex.RUnlock()
 
@@ -163,6 +175,8 @@ func (*Dbmsg) GetRecentPageFlip(ChanId string, Limit int, lstti int64, lstid str
 		NullCoverImg  sql.NullString
 		NullTopic       sql.NullString
 		NullAuthorCover sql.NullString
+		NullAuthorName sql.NullString
+		NullAuthorId sql.NullString
 		NullNinePics sql.NullString
 
 		rows *sql.Rows
@@ -191,15 +205,15 @@ func (*Dbmsg) GetRecentPageFlip(ChanId string, Limit int, lstti int64, lstid str
 	}
 	defer rows.Close()
 
-	_res = make([]*Msg, Limit)
+	_res = make([]*MsgLine, Limit)
 
 	var i int
 	for i = 0; rows.Next(); i++ {
-		info := &Msg{}
+		info := &MsgLine{}
 		_err = rows.Scan(
 			&info.Id, &info.SnapTime, &info.PubTime, &info.SourceURL,
 			&info.Title, &info.SubTitle, &NullCoverImg, &info.ViewType,
-			&info.AuthorId, &NullAuthorCover, &info.AuthorName,
+			&NullAuthorId, &NullAuthorCover, &NullAuthorName,
 			&info.Tag, &NullTopic, &NullNinePics,
 		)
 
@@ -210,9 +224,15 @@ func (*Dbmsg) GetRecentPageFlip(ChanId string, Limit int, lstti int64, lstid str
 		info.Topic = NullTopic.String
 		info.CoverImg = DBMsg.genPicUrl(NullCoverImg.String)
 		info.AuthorCoverImg = DBMsg.genPicUrl(NullAuthorCover.String)
+		info.AuthorId = NullAuthorId.String
+		info.AuthorName = NullAuthorName.String
 
 		if info.ViewType == generant.VIEW_TYPE_PICTURES {
-			info.PicRefs = DBMsg.genNinePics(NullNinePics.String)
+			info.Pics = DBMsg.genNinePics(NullNinePics.String)
+
+			if info.Pics == nil || len(info.Pics) == 0 {
+				info.Pics = nil
+			}
 		}
 
 		_res[i] = info
@@ -237,17 +257,17 @@ func (*Dbmsg) genPicUrl(plain string) string {
 	return DBMsg.BuildPic(fields[0], fields[1], fields[2])
 }
 
-func (*Dbmsg) genNinePics(plain string) []PicRef {
+func (*Dbmsg) genNinePics(plain string) []string {
 	if plain == "" {
-		return []PicRef{}
+		return []string{}
 	}
 
 	parted_plain := strings.Split(plain, " ; ")
 
-	result := make([]PicRef, len(parted_plain))
+	result := make([]string, len(parted_plain))
 
 	for i, p := range parted_plain {
-		result[i] = PicRef{ Url: DBMsg.genPicUrl(p) }
+		result[i] = DBMsg.genPicUrl(p)
 	}
 
 	return result

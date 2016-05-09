@@ -19,6 +19,11 @@ type Msg struct {
 	PicRefs []PicRef `json:",omitempty"`
 }
 
+type MsgLine struct {
+	MsgInfo
+	Pics []string
+}
+
 type MsgInfo struct {
 	Id             string
 	SnapTime       int64
