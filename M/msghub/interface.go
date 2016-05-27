@@ -38,6 +38,7 @@ type MsgInfo struct {
 	AuthorName     string `json:",omitempty"`
 	Tag            string
 	Topic          string `json:",omitempty"`
+	PicRefs []PicRef `json:",omitempty"`
 }
 
 type PicRef struct {

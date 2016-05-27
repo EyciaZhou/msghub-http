@@ -6,6 +6,7 @@ import (
 	"github.com/EyciaZhou/configparser"
 	log "github.com/Sirupsen/logrus"
 	_ "github.com/go-sql-driver/mysql"
+	"github.com/EyciaZhou/msghub-http/M/HeadStorer"
 )
 
 type userError struct {
@@ -31,11 +32,19 @@ type Config struct {
 	DBName     string `default:"usr"`
 	DBUsername string `default:"root"`
 	DBPassword string `default:"fmttm233"`
+
+	QiniuAccessKey string`default:"fake"`
+	QiniuSecretKey string`default:"fake"`
+	QiniuBucket string `default:"msghub-head"`
+	QiniuDownloadUrl string `default:"http://o7rtp39nn.bkt.clouddn.com/"`
+	QiniuCallbackUrl string `default:"https://msghub.eycia.me/usr/api/head/callback"`
 }
 
 var config Config
 var (
 	db *sql.DB
+	headMark HeadStorer.HeadMark
+	HeadStore HeadStorer.HeadStorer
 )
 
 func init() {
@@ -55,4 +64,17 @@ func init() {
 		return
 	}
 	log.Info("M.msghub connected")
+
+	headMark = HeadStorer.NewMysqlHeadMark(&HeadStorer.MysqlHeadMarkConfig{
+		db,
+		"_user",
+		"id",
+		"head",
+		"T",
+	})
+
+	HeadStore = HeadStorer.NewQiniuHeadStorer(&HeadStorer.QiniuHeadStorerConfig{
+		config.QiniuAccessKey,config.QiniuSecretKey,config.QiniuBucket,
+		config.QiniuDownloadUrl, config.QiniuCallbackUrl,
+	}, headMark)
 }

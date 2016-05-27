@@ -7,6 +7,7 @@ import (
 	"strings"
 	"database/sql"
 	"bytes"
+	"strconv"
 )
 
 type ruler struct{
@@ -51,7 +52,7 @@ func (dbuser *Dbuser) salt_pwd(pwd_sha256 []byte, salt []byte) (pwd_sha256_salte
 	return
 }
 
-func (Dbuser *Dbuser) Pwd_verify(uname string, challenge []byte) (_user *User_base_info, _err error) {
+func (Dbuser *Dbuser) VerifyPassword(uname string, challenge []byte) (_user *User_base_info, _err error) {
 	flag := Ruler.Uname(uname)
 	if !flag {
 		return nil, newUserError("验证用户时错误", "用户名格式错误")
@@ -88,11 +89,13 @@ func (Dbuser *Dbuser) Pwd_verify(uname string, challenge []byte) (_user *User_ba
 		return nil, newUserError("验证用户时错误", "密码错误")
 	}
 
+	_user.Head = HeadStore.GetHead(_user.Id)
+
 	_err = nil
 	return
 }
 
-func (Dbuser *Dbuser) Change_nickname(uname string, nickname string) (error) {
+func (Dbuser *Dbuser) ChangeNickname(uname string, nickname string) (error) {
 	if !Ruler.Uname(uname) {
 		return newUserError("验证用户时错误", "用户名格式错误")
 	}
@@ -121,15 +124,18 @@ func (Dbuser *Dbuser) Change_nickname(uname string, nickname string) (error) {
 	return nil
 }
 
-func (dbuser *Dbuser) Add(username string, email string, pwd_sha256 []byte) (int64, error) {
+func (dbuser *Dbuser) AddUser(username string, email string, pwd_sha256 []byte, nickname string) (string, error) {
 	if !Ruler.Username.MatchString(username) {
-		return 0, newUserError("创建用户时错误", "用户名格式错误")
+		return "", newUserError("创建用户时错误", "用户名格式错误")
 	}
 	if !Ruler.Email.MatchString(email) {
-		return 0, newUserError("创建用户时错误", "邮箱格式错误")
+		return "", newUserError("创建用户时错误", "邮箱格式错误")
 	}
 	if !Ruler.Pwd_sha256(pwd_sha256) {
-		return 0, newUserError("创建用户时错误", "密码格式错误")
+		return "", newUserError("创建用户时错误", "密码格式错误")
+	}
+	if !Ruler.Nickname(nickname) {
+		return "", newUserError("创建用户时错误", "昵称格式错误")
 	}
 
 	username = strings.ToLower(username)
@@ -142,26 +148,26 @@ func (dbuser *Dbuser) Add(username string, email string, pwd_sha256 []byte) (int
 				_user (username, email, pwd, salt, nickname)
 			VALUE
 				(?,?,?,?,?)
-	`, username, email, pwd_sha256_salted_sha256, salt, username)
+	`, username, email, pwd_sha256_salted_sha256, salt, nickname)
 	if err != nil {
 		if e, ok := err.(*mysql.MySQLError); ok {
 			if e.Number == 2525 {
-				return 0, newUserError("创建用户时错误", "检测到重复的用户信息")
+				return "", newUserError("创建用户时错误", "检测到重复的用户信息")
 			}
 		}
 		logrus.Error("创建用户时错误", err.Error())
-		return 0, newUserError("创建用户时错误", "数据库错误")
+		return "", newUserError("创建用户时错误", "数据库错误")
 	}
 
 	id, err := result.LastInsertId()
 	if err != nil {
-		return 0, err
+		return "", err
 	}
-	return id, nil
+	return strconv.FormatInt(id, 10), nil
 }
 
-func (dbuser *Dbuser) Change_pwd(uname string, old_pwd []byte, new_pwd []byte) error {
-	userInfo, err := dbuser.Pwd_verify(uname, old_pwd)
+func (dbuser *Dbuser) ChangePassword(uname string, old_pwd []byte, new_pwd []byte) error {
+	userInfo, err := dbuser.VerifyPassword(uname, old_pwd)
 	if err != nil {
 		return err
 	}
@@ -190,7 +196,7 @@ func (dbuser *Dbuser) Change_pwd(uname string, old_pwd []byte, new_pwd []byte) e
 	return nil
 }
 
-func (dbuser *Dbuser) GetId(uname string) (string, error) {
+func (dbuser *Dbuser) GetIdFromUname(uname string) (string, error) {
 	if !Ruler.Uname(uname) {
 		return "", newUserError("验证用户时错误", "用户名格式错误")
 	}
@@ -217,8 +223,8 @@ func (dbuser *Dbuser) GetId(uname string) (string, error) {
 	return id, nil
 }
 
-func (dbuser *Dbuser) Master(from_uname string, from_pwd []byte, grantTo string, level int) error {
-	base_user_info, err := dbuser.Pwd_verify(from_uname, from_pwd)
+func (dbuser *Dbuser) GrantMaster(from_uname string, from_pwd []byte, grantTo string, level int) error {
+	base_user_info, err := dbuser.VerifyPassword(from_uname, from_pwd)
 	if err != nil {
 		return err
 	}

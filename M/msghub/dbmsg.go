@@ -153,7 +153,8 @@ const _RAW_SQL_PAGE_DOWN = `
 		WHERE b.mid = tb.id AND b.pid <= picref.pid
 	) <= 9 AND picref.mid = tb.id
 	LEFT JOIN pic_task_queue ON pic_task_queue.id = picref.pid
-	GROUP BY tb.id;`
+	GROUP BY tb.id
+	ORDER BY SnapTime DESC, id DESC;`
 
 
 func (*Dbmsg) GetRecentPageFlip(ChanId string, Limit int, lstti int64, lstid string, ignoreChan bool) (_res []*MsgLine, _err error) {
