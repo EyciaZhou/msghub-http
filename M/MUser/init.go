@@ -43,7 +43,6 @@ type Config struct {
 var config Config
 var (
 	db *sql.DB
-	headMark HeadStorer.HeadMark
 	HeadStore HeadStorer.HeadStorer
 )
 
@@ -65,16 +64,8 @@ func init() {
 	}
 	log.Info("M.msghub connected")
 
-	headMark = HeadStorer.NewMysqlHeadMark(&HeadStorer.MysqlHeadMarkConfig{
-		db,
-		"_user",
-		"id",
-		"head",
-		"T",
-	})
-
 	HeadStore = HeadStorer.NewQiniuHeadStorer(&HeadStorer.QiniuHeadStorerConfig{
 		config.QiniuAccessKey,config.QiniuSecretKey,config.QiniuBucket,
 		config.QiniuDownloadUrl, config.QiniuCallbackUrl,
-	}, headMark)
+	}, DBUser)
 }

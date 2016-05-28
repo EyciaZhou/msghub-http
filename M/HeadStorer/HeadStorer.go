@@ -13,6 +13,7 @@ import (
 	"io/ioutil"
 	"github.com/EyciaZhou/msghub-http/C"
 	"gopkg.in/macaron.v1"
+	"strconv"
 )
 
 type HeadStorer interface {
@@ -22,13 +23,16 @@ type HeadStorer interface {
 	/*GetHead
 		return "", if this user never upload head
 	 */
-	GetHead(username string) (string);
+	GetHead(username string, value string) (string);
 }
 
+type HeadMarker interface {
+	MarkHead(id string, value string) error
+}
 
 type QiniuHeadStorer struct {
 	QiniuHeadStorerConfig
-	headMark HeadMark
+	headMarker HeadMarker
 }
 
 type QiniuHeadStorerConfig struct {
@@ -124,25 +128,23 @@ func (p *QiniuHeadStorer) Callback(ctx *macaron.Context) {
 		return
 	}
 
-	reason, e = "服务端错误", p.headMark.Set(usernme)
+	value := strconv.FormatInt(time.Now().Unix(), 10)
+	reason, e = "服务端错误", p.headMarker.MarkHead(usernme, value)
 
 	if e == nil {
-		ctx.JSON(http.StatusOK, C.Pack(p.GetHead(usernme)))
+		ctx.JSON(http.StatusOK, C.Pack(p.GetHead(usernme, value)))
 	}
 
 	return
 }
 
-func (p *QiniuHeadStorer) GetHead(username string) (string) {
-	if p.headMark.Get(username) {
-		return p.DownloadUrl + username
-	}
-	return ""
+func (p *QiniuHeadStorer) GetHead(username string, value string) (string) {
+	return p.DownloadUrl + username + "-head?v=" + value
 }
 
-func NewQiniuHeadStorer(config *QiniuHeadStorerConfig, headMark HeadMark) *QiniuHeadStorer {
+func NewQiniuHeadStorer(config *QiniuHeadStorerConfig, headMarker HeadMarker) *QiniuHeadStorer {
 	return &QiniuHeadStorer{
 		*config,
-		headMark,
+		headMarker,
 	}
 }

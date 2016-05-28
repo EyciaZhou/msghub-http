@@ -62,7 +62,7 @@ func (Dbuser *Dbuser) VerifyPassword(uname string, challenge []byte) (_user *Use
 
 	row := db.QueryRow(`
 		SELECT
-				id, username, email, master, pwd, salt, nickname
+				id, username, email, master, pwd, salt, nickname, head
 			FROM _user
 			WHERE (username=? OR email=? OR id=?)
 			LIMIT 1
@@ -72,9 +72,11 @@ func (Dbuser *Dbuser) VerifyPassword(uname string, challenge []byte) (_user *Use
 		salt []byte
 	)
 
+	var head sql.NullString
+
 	_user = &User_base_info{}
 
-	err := row.Scan(&_user.Id, &_user.Username, &_user.Email, &_user.Master, &old_salted_pwd, &salt, &_user.Nickname)
+	err := row.Scan(&_user.Id, &_user.Username, &_user.Email, &_user.Master, &old_salted_pwd, &salt, &_user.Nickname, &head)
 
 	if err == sql.ErrNoRows {
 		return nil, newUserError("验证用户时错误", "不存在的用户")
@@ -89,7 +91,9 @@ func (Dbuser *Dbuser) VerifyPassword(uname string, challenge []byte) (_user *Use
 		return nil, newUserError("验证用户时错误", "密码错误")
 	}
 
-	_user.Head = HeadStore.GetHead(_user.Id)
+	if (head.Valid) {
+		_user.Head = HeadStore.GetHead(_user.Id, head.String)
+	}
 
 	_err = nil
 	return
@@ -221,6 +225,13 @@ func (dbuser *Dbuser) GetIdFromUname(uname string) (string, error) {
 	}
 
 	return id, nil
+}
+
+func (Dbuser *Dbuser) MarkHead(id string, value string) error {
+	_, err := db.Exec(`UPDATE _user
+				SET head=?
+				WHERE id=?`, value, id)
+	return err
 }
 
 func (dbuser *Dbuser) GrantMaster(from_uname string, from_pwd []byte, grantTo string, level int) error {
